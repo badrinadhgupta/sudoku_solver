@@ -7,9 +7,9 @@ SCORE_WIDTH = 40
 
 NUMBERS_FONT = pygame.font.SysFont('comicsans', 40)
 TEMPORARY_NUMBERS_FONT = pygame.font.SysFont('comicsans', 20)
-ERROR_FONT = pygame.font.SysFont('comicsans', 150)
+ERROR_FONT = pygame.font.SysFont('comicsans', 20)
 
-CURRENT_GRID = [None, None]
+CURRENT_GRID = [0, 0]
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -20,7 +20,9 @@ GREY = (128, 128, 128)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("PLAY SUDOKU!")
 
-grid = [[0 for x in range(0, 10)] for y in range(0, 10)]
+grid = [[0 for x in range(0, 9)] for y in range(0, 9)]
+SELECTED_GRID = [[0 for _ in range(0, 9)] for __ in range(0, 9)]
+k = 0
 
 main_sudoku = [[5, 0, 0, 0, 1, 0, 0, 0, 4],
           [2, 7, 4, 0, 0, 0, 6, 0, 0],
@@ -31,6 +33,8 @@ main_sudoku = [[5, 0, 0, 0, 1, 0, 0, 0, 4],
           [0, 0, 0, 5, 0, 3, 0, 1, 0],
           [0, 0, 5, 0, 0, 0, 9, 2, 7],
           [1, 0, 0, 0, 2, 0, 0, 0, 3]]
+
+temp_sudoku = [[0 for _ in range(0, 9)] for __ in range(0, 9)]
 
 
 def checkrow(arr, row, n):
@@ -83,7 +87,9 @@ def draw_grid():
 
 
 def display_numbers():
-    global grid
+    global temp_sudoku, CURRENT_GRID
+    temp_sudoku[CURRENT_GRID[0]][CURRENT_GRID[1]] = k
+    global grid, SELECTED_GRID
     for i in range(0, 9):
         for j in range(0, 9):
             if main_sudoku[i][j] != 0:
@@ -92,18 +98,12 @@ def display_numbers():
                     pygame.draw.rect(screen, GREEN, box, 2)
                 number = NUMBERS_FONT.render(str(main_sudoku[i][j]), True, BLACK)
                 screen.blit(number, (50*j+25-number.get_width()//2, 50*i+25-number.get_height()//2))
-
-
-def draw_window():
-    global grid
-    screen.fill(WHITE)
-    draw_grid()
-    display_numbers()
-    for i in range(0, 9):
-        for j in range(0, 9):
-            grid[i][j] = 0
-    # input_numbers()
-    pygame.display.update()
+            elif temp_sudoku[i][j] != 0:
+                if SELECTED_GRID[i][j] == 1:
+                    box = pygame.Rect(50 * j, 50 * i, 50, 50)
+                    pygame.draw.rect(screen, GREEN, box, 2)
+                number = TEMPORARY_NUMBERS_FONT.render(str(temp_sudoku[i][j]), True, GREY)
+                screen.blit(number, (50*j+25-number.get_width()//2, 50*i+25-number.get_height()//2))
 
 
 def solvesudoku(main_sudoku):
@@ -129,24 +129,38 @@ def solvesudoku(main_sudoku):
     return False
 
 
-def selected_box(grid):
+def selected_box():
+    global SELECTED_GRID
     for row in range(0, 9):
         for col in range(0, 9):
-            if grid[row][col] == 1:
+            if SELECTED_GRID[row][col] == 1:
                 box = pygame.Rect(50 * col, 50 * row, 50, 50)
                 pygame.draw.rect(screen, GREEN, box, 2)
 
 
-def error():
+def errors():
     screen.fill(BLACK)
-    print('1')
     number = ERROR_FONT.render('SOLUTION NOT POSSIBLE', True, WHITE)
-    screen.blit(number, (SCREEN_WIDTH//2 - number.get_width() // 2, SCREEN_HEIGHT - number.get_height() // 2))
+    screen.blit(number, (SCREEN_WIDTH//2 - number.get_width() // 2, SCREEN_HEIGHT//2 - number.get_height() // 2))
+    pygame.display.update()
+    pygame.time.delay(5000)
 
+
+def draw_window():
+    global grid
+    screen.fill(WHITE)
+    draw_grid()
+    display_numbers()
+    selected_box()
+    for i in range(0, 9):
+        for j in range(0, 9):
+            grid[i][j] = 0
+    # input_numbers()
+    pygame.display.update()
 
 def main():
     run = True
-    global main_sudoku, CURRENT_GRID
+    global main_sudoku, CURRENT_GRID, k, temp_sudoku
     clock = pygame.time.Clock()
 
     while run:
@@ -155,9 +169,31 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    k = 1
+                if event.key == pygame.K_2:
+                    k = 2
+                if event.key == pygame.K_3:
+                    k = 3
+                if event.key == pygame.K_4:
+                    k = 4
+                if event.key == pygame.K_5:
+                    k = 5
+                if event.key == pygame.K_6:
+                    k = 6
+                if event.key == pygame.K_7:
+                    k = 7
+                if event.key == pygame.K_8:
+                    k = 8
+                if event.key == pygame.K_9:
+                    k = 9
+                if event.key == pygame.K_RETURN:
+                    main_sudoku[CURRENT_GRID[0]][CURRENT_GRID[1]] = temp_sudoku[CURRENT_GRID[0]][CURRENT_GRID[1]]
+                    temp_sudoku[CURRENT_GRID[0]][CURRENT_GRID[1]] = 0
                 if event.key == pygame.K_s:
                     if not solvesudoku(main_sudoku):
-                        print('ERROR')
+                        errors()
+                        run = False
                 if event.key == pygame.K_r:
                     main_sudoku = [[5, 0, 0, 0, 1, 0, 0, 0, 4],
                                       [2, 7, 4, 0, 0, 0, 6, 0, 0],
@@ -168,20 +204,21 @@ def main():
                                       [0, 0, 0, 5, 0, 3, 0, 1, 0],
                                       [0, 0, 5, 0, 0, 0, 9, 2, 7],
                                       [1, 0, 0, 0, 2, 0, 0, 0, 3]]
+                    temp_sudoku = [[0 for _ in range(0, 9)] for __ in range(0, 9)]
                     draw_window()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
-                print(x, y)
                 if x <= 450 and y <= 450:
                     col = x//50
                     row = y//50
                     CURRENT_GRID = [row, col]
                     for i in range(0, 9):
                         for j in range(0, 9):
-                            grid[i][j] = 0
-                    grid[row][col] = 1
-                    selected_box(grid)
+                            SELECTED_GRID[i][j] = 0
+                    SELECTED_GRID[row][col] = 1
+
+                    selected_box()
 
         draw_window()
 
